@@ -1,0 +1,136 @@
+import os
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVR
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+import numpy as np
+import pickle
+
+def load_data(updated_file_path):
+    return pd.read_csv(updated_file_path)
+
+def train_svm_knn_model(df):
+    # Print column names to verify
+    print("Available columns in the dataset:", df.columns)
+    
+    # Set the correct target column name
+    target_column = 'Crime Rate'  # Ensure this matches the actual target column name
+    
+    if target_column not in df.columns:
+        raise ValueError(f"Target column '{target_column}' not found in the dataset.")
+
+    # Features and target variable
+    X = df.drop(target_column, axis=1)
+    y = df[target_column]
+
+    # Convert categorical variables into dummy/indicator variables
+    X = pd.get_dummies(X)
+
+    # Handle NaN values using SimpleImputer
+    imputer = SimpleImputer(strategy='mean')
+    X = imputer.fit_transform(X)  # Impute missing values in features
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Scale the features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    # Initialize and train the SVM model
+    svm_model = SVR()
+    svm_model.fit(X_train_scaled, y_train)
+
+    # Predict on test data using SVM
+    y_pred_svm = svm_model.predict(X_test_scaled)
+
+    # Evaluate the SVM model
+    mse_svm = mean_squared_error(y_test, y_pred_svm)
+    r2_svm = r2_score(y_test, y_pred_svm)
+
+    # Print evaluation metrics for SVM
+    print(f"SVM - Mean Squared Error: {mse_svm:.4f}, R² Score: {r2_svm:.4f}")
+
+    # Visualization of SVR predictions
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y_test, y_pred_svm, color='blue', label='SVR Predictions', alpha=0.6)
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', label='Perfect Prediction')
+    plt.title('SVR: Actual vs Predicted')
+    plt.xlabel('Actual Crime Rate')
+    plt.ylabel('Predicted Crime Rate')
+    plt.legend()
+    plt.show()
+
+    # Evaluate KNN with different values of k
+    k_values = range(1, 11)  # k from 1 to 10
+    mse_knn_list = []
+    r2_knn_list = []
+
+    for k in k_values:
+        # Initialize and train the KNN model for the current k
+        knn_model = KNeighborsRegressor(n_neighbors=k)
+        knn_model.fit(X_train_scaled, y_train)
+
+        # Predict on test data using KNN
+        y_pred_knn = knn_model.predict(X_test_scaled)
+
+        # Evaluate the KNN model
+        mse_knn = mean_squared_error(y_test, y_pred_knn)
+        r2_knn = r2_score(y_test, y_pred_knn)
+
+        mse_knn_list.append(mse_knn)
+        r2_knn_list.append(r2_knn)
+
+        # Print evaluation metrics for the current k
+        print(f"KNN (k={k}) - Mean Squared Error: {mse_knn:.4f}, R² Score: {r2_knn:.4f}")
+
+    # Plot MSE and R² scores for different k values
+    plt.figure(figsize=(14, 6))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(k_values, mse_knn_list, marker='o', color='green', label='MSE')
+    plt.title('KNN Mean Squared Error for Different k')
+    plt.xlabel('k (Number of Neighbors)')
+    plt.ylabel('Mean Squared Error')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(k_values, r2_knn_list, marker='o', color='blue', label='R² Score')
+    plt.title('KNN R² Score for Different k')
+    plt.xlabel('k (Number of Neighbors)')
+    plt.ylabel('R² Score')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    return svm_model
+
+if __name__ == "__main__":
+    # Specify the path to the preprocessed dataset
+    input_file = r"cleaneddata\preprocessed_crime_dataset.csv"
+    
+    # Specify the path to save the trained models
+    model_dir = r"C:\Users\shrit\mlproject\models"
+    svm_model_file = os.path.join(model_dir, "svm_model.pkl")
+    
+    # Ensure the model directory exists
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    
+    # Load the preprocessed dataset
+    df = load_data(input_file)
+    
+    # Train the SVM and evaluate KNN with varying k
+    svm_model = train_svm_knn_model(df)
+    
+    # Save the trained SVM model
+    with open(svm_model_file, "wb") as f:
+        pickle.dump(svm_model, f)
+    
+    print(f"SVM model saved to {svm_model_file}.")

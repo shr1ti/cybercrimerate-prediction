@@ -1,0 +1,54 @@
+import pandas as pd
+import numpy as np
+
+# Load the CSV file
+file_path = r'C:\Users\shrit\mlproject\data\2018 Cyber Crime Stats.csv'
+data = pd.read_csv(file_path)
+
+# Display the first few rows before replacing 0 values
+print("Before replacing 0 values:\n", data.head())
+
+# Function to replace 0 values with column mean
+def replace_zero_with_mean(column):
+    # Calculate mean of the column ignoring zeros
+    mean_value = column[column != 0].mean()
+    # Replace 0 with the calculated mean
+    return column.replace(0, mean_value)
+
+# Apply the function to each numeric column
+data = data.apply(lambda col: replace_zero_with_mean(col) if col.dtype != 'object' else col)
+
+# Display the first few rows after replacing 0 values
+print("After replacing 0 values with mean:\n", data.head())
+
+import pandas as pd
+import numpy as np
+
+# Load the CSV file
+file_path = r'C:\Users\shrit\mlproject\data\2018 Cyber Crime Stats.csv'
+data = pd.read_csv(file_path)
+
+# Display the first few rows before replacing 0 values
+print("Before replacing 0 values:\n", data.head())
+
+# Function to replace 0 values with column mean
+def replace_zero_with_mean(column):
+    # Calculate mean of the column ignoring zeros
+    mean_value = column[column != 0].mean()
+    # Replace 0 with the calculated mean
+    return column.replace(0, mean_value)
+
+# Apply the function to each numeric column
+data = data.apply(lambda col: replace_zero_with_mean(col) if col.dtype != 'object' else col)
+
+# Display the updated dataset after replacing 0 values with mean
+print("Updated dataset after replacing 0 values:\n", data)
+
+# Optionally, to display the first few rows of the updated dataset:
+print("\nFirst few rows of the updated dataset:\n", data.head())
+
+# Save the updated dataset to a new CSV file (or overwrite the existing file)
+updated_file_path = r'cleaneddata\preprocessed_crime_dataset.csv'
+# Save the dataset to a new file
+data.to_csv(r'cleaneddata\preprocessed_crime_dataset.csv', index=False)  # 'index=False' prevents saving the index as a column
+print(f"Updated dataset saved to r'cleaneddata\preprocessed_crime_dataset.csv'")
